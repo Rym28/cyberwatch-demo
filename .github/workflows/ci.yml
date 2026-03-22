@@ -2,7 +2,7 @@ name: CI — Build & Scan
 
 on:
   push:
-    branches: [main]        # branche de développement
+    branches: [main]  # branche de développement
 
 jobs:
   build-and-scan:
@@ -10,29 +10,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4    # version stable actuelle
+        uses: actions/checkout@v4
 
       - name: Build de l'image
         run: docker build -t cyberwatch-demo:${{ github.sha }} .
 
       - name: Scan Trivy — rapport complet
-        run: |
-          trivy image \
-            --format json \
-            --output trivy-report.json \
-            --exit-code 0 \   # continue même si CVE trouvées
-            cyberwatch-demo:${{ github.sha }}
+        uses: aquasecurity/trivy-action@v2
+        with:
+          image-ref: cyberwatch-demo:${{ github.sha }}
+          format: json
+          output: trivy-report.json
+          exit-code: 0  # continue même si CVE trouvées
 
       - name: Gate sécurité — bloquer si CRITICAL ou HIGH
-        run: |
-          trivy image \
-            --severity CRITICAL,HIGH \
-            --exit-code 1 \   # échoue si CVE CRITICAL/HIGH
-            cyberwatch-demo:${{ github.sha }}
+        uses: aquasecurity/trivy-action@v2
+        with:
+          image-ref: cyberwatch-demo:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1  # échoue si CVE CRITICAL/HIGH
 
       - name: Upload rapport Trivy
         uses: actions/upload-artifact@v4
-        if: always()          # upload quoi qu'il arrive
+        if: always()
         with:
           name: trivy-report
           path: trivy-report.json
