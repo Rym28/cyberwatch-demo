@@ -1,0 +1,38 @@
+name: CI — Build & Scan
+
+on:
+  push:
+    branches: [dev]        # branche de développement
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4    # version stable actuelle
+
+      - name: Build de l'image
+        run: docker build -t cyberwatch-demo:${{ github.sha }} .
+
+      - name: Scan Trivy — rapport complet
+        run: |
+          trivy image \
+            --format json \
+            --output trivy-report.json \
+            --exit-code 0 \   # continue même si CVE trouvées
+            cyberwatch-demo:${{ github.sha }}
+
+      - name: Gate sécurité — bloquer si CRITICAL ou HIGH
+        run: |
+          trivy image \
+            --severity CRITICAL,HIGH \
+            --exit-code 1 \   # échoue si CVE CRITICAL/HIGH
+            cyberwatch-demo:${{ github.sha }}
+
+      - name: Upload rapport Trivy
+        uses: actions/upload-artifact@v4
+        if: always()          # upload quoi qu'il arrive
+        with:
+          name: trivy-report
+          path: trivy-report.json
