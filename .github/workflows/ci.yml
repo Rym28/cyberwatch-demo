@@ -2,7 +2,7 @@ name: CI — Build & Scan
 
 on:
   push:
-    branches: [dev]        # branche de développement
+    branches: [main]        # branche de développement
 
 jobs:
   build-and-scan:
